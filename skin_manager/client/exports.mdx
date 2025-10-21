@@ -28,13 +28,14 @@ exports["smzi_skinmanager"]:ApplySkin(skin, saveSkin)
 Sends the current skin data to the framework to save
 
 ```LUA
-@param skin table
+--- @param skin table
+--- @return nil
 exports["smzi_skinmanager"]:SaveSkin(skin)
 ```
 
 ## SetModel
 
-This function is used to apply a ped to a player.
+This function is used to apply a ped to a player and returns the ped.
 
 ```LUA
 --- @param model string | integer
@@ -44,10 +45,9 @@ exports["smzi_skinmanager"]:SetModel(model)
 
 ## GetComponents
 
-This function returns data from a component.
+Return the current components on the Player Ped
 
 ```LUA
---- @param componentName string
 --- @param isCollection? boolean
 --- @return table
 exports["smzi_skinmanager"]:GetComponents(isCollection)
@@ -71,5 +71,6 @@ Initialize default Ped Skin
 
 ```LUA
 --- @param sex? string or number
+--- @return nil
 exports["smzi_skinmanager"]:InitDefaultSkin(sex)
 ```
