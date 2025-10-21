@@ -1,0 +1,103 @@
+---
+title: "Functions"
+---
+
+## SaveSkin
+
+Save a skin object in database depending on your framework
+
+```LUA
+--- @paran src integer # Player ID
+--- @param skin table # Skin table containing all the components
+function SaveSkin(src, skin)
+    assert(math.type(src) == "integer", "SaveSkin - Source must be an integer")
+    assert(type(skin) == "table", "SaveSkin - skin must be a table")
+    assert(next(skin), "SaveSkin - skin is empty")
+
+    if GetResourceState('es_extended') == 'started' then
+        local ESX <const> = exports["es_extended"]:getSharedObject()
+        local xPlayer <const> = ESX.GetPlayerFromId(src)
+        local identifier <const> = xPlayer.getIdentifier()
+
+        MySQL.update("UPDATE `users` SET `skin` = ? WHERE `identifier` = ?", {
+            json.encode(skin), identifier
+        }, function(affectedRow)
+            if affectedRow then
+                sendDebugMessage("debug", "Skin correctly updated")
+            end
+        end)
+        return
+    elseif GetResourceState('qbcore') == 'started' then
+        local QBCore <const> = exports['qb-core']:GetCoreObject()
+        local player <const> =  QBCore.Functions.GetPlayer(src)
+        local citizenId <const> = player.citizenid
+
+        MySQL.update("UPDATE `playerskins` SET `skin` = ? WHERE `citizenid` = ?", {
+            json.encode(skin), citizenId
+        }, function(affectedRow)
+            if affectedRow then
+                sendDebugMessage("debug", "Skin correctly updated")
+            end
+        end)
+
+        return
+    else
+         MySQL.update("UPDATE `users` SET `skin` = ? WHERE `source` = ?", {
+            json.encode(skin), src
+        }, function(affectedRow)
+            if affectedRow then
+                sendDebugMessage("debug", "Skin correctly updated")
+            end
+        end)
+    end
+end
+```
+
+## LoadSkin
+
+Fetch a skin object in database depending the framework you use and send it to the client through an event.
+
+```LUA
+--- @param source integer # Player ID
+function LoadSkin(source)
+    assert(math.type(source) == "integer", "LoadSkin - source must be an integer!")
+
+     if GetResourceState('es_extended') == 'started' then
+        local ESX <const> = exports["es_extended"]:getSharedObject()
+        local xPlayer <const> = ESX.GetPlayerFromId(source)
+        local identifier <const> = xPlayer.getIdentifier()
+
+        MySQL.query("SELECT `skin` FROM `users` WHERE `identifier` = ?", {
+            identifier
+        }, function(response)
+            if response and response[1] then
+                sendDebugMessage("debug", string.format("Skin for player with identifier %s: %s", identifier, response[1]))
+                TriggerClientEvent("smzi_skinmanager:client:loadSkin", source, response[1])
+            end
+        end)
+
+    elseif GetResourceState('qbcore') == 'started' then
+        local QBCore <const> = exports['qb-core']:GetCoreObject()
+        local player <const> =  QBCore.Functions.GetPlayer(source)
+        local citizenId <const> = player.citizenid
+
+        MySQL.query("SELECT `skin` FROM `playerskins` WHERE `citizenid` = ?", {
+            citizenId
+        }, function(response)
+            if response and response[1] then
+                sendDebugMessage("debug", string.format("Skin for player with citizenid %s: %s", citizenId, response[1]))
+                TriggerClientEvent("smzi_skinmanager:client:loadSkin", source, response[1])
+            end
+        end)
+    else
+        MySQL.query("SELECT `skin` FROM `users` WHERE `source` = ?", {
+            source
+        }, function(response)
+            if response and response[1] then
+                sendDebugMessage("debug", string.format("Skin for player with id %s: %s", source, response[1]))
+                TriggerClientEvent("smzi_skinmanager:client:loadSkin", source, response[1])
+            end
+        end)
+    end
+end
+```

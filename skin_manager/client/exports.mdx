@@ -1,0 +1,75 @@
+---
+title: "Exports"
+---
+
+## GetSkin
+
+Return the current skin data
+
+```LUA
+--- @param last? boolean
+--- @return table
+exports["smzi_skinmanager"]:GetSkin(last)
+```
+
+## ApplySkin
+
+Applies the appearance without changing the model
+
+```LUA
+--- @param skin table
+--- @param saveSkin? boolean
+--- @return boolean
+exports["smzi_skinmanager"]:ApplySkin(skin, saveSkin)
+```
+
+## SaveSkin
+
+Sends the current skin data to the framework to save
+
+```LUA
+@param skin table
+exports["smzi_skinmanager"]:SaveSkin(skin)
+```
+
+## SetModel
+
+This function is used to apply a ped to a player.
+
+```LUA
+--- @param model string | integer
+--- @return integer
+exports["smzi_skinmanager"]:SetModel(model)
+```
+
+## GetComponents
+
+This function returns data from a component.
+
+```LUA
+--- @param componentName string
+--- @param isCollection? boolean
+--- @return table
+exports["smzi_skinmanager"]:GetComponents(isCollection)
+```
+
+## SetComponent
+
+This function can be used to modify the player skin on a specific component.
+
+```LUA
+--- @param componentName string
+--- @param componentValue number
+--- @param isCollection? boolean
+--- @return nil
+exports["smzi_skinmanager"]:SetComponent(componentName, componentValue, isCollection)
+```
+
+## InitDefaultSkin
+
+Initialize default Ped Skin
+
+```LUA
+--- @param sex? string or number
+exports["smzi_skinmanager"]:InitDefaultSkin(sex)
+```

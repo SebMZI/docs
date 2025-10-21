@@ -53,7 +53,21 @@
           {
             "group": "Skin Manager",
             "pages": [
-              "skin_manager/introduction"
+              {
+                "group": "Client",
+                "pages": [
+                  "skin_manager/client/exports",
+                  "skin_manager/client/events"
+                ]
+              },
+              {
+                "group": "Server",
+                "pages": [
+                  "skin_manager/server/exports",
+                  "skin_manager/server/events",
+                  "skin_manager/server/functions"
+                ]
+              }
             ]
           }       
         ]

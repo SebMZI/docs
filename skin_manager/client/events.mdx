@@ -1,0 +1,12 @@
+---
+title: "Events"
+---
+
+## LoadSkin
+
+This event will initiate a new default model and then apply the skin fetched from the database.
+
+```LUA
+--- @param skin? table # Skin table containing all the components
+TriggerClientEvent("smzi_skinmanager:client:loadSkin", skin)
+```
