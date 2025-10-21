@@ -1,0 +1,44 @@
+---
+title: "Introduction"
+description: "Welcome on the Character Creator documentation"
+---
+
+## What is Character Creator ?
+
+Character Creator is a powerful asset to create the identity of your players, and to create their character appearance. <br/><br/>
+**Important Information**: You need <a href="../skin_manager/introduction">smzi_skinmanager</a> to use this asset
+
+## Documentation
+
+<Columns cols={2}>
+  <Card title="Client" icon="laptop" href="client">
+    Client-side
+  </Card>
+  <Card title="Server" icon="server" href="server">
+    Server-side
+  </Card>
+</Columns>
+
+## Installation
+
+<Steps>
+  <Step title="Install all dependencies">
+    Download and Install the necessary dependencies: <br />-{" "}
+    <a href="../skin_manager/introduction">smzi_skinmanager</a>
+  </Step>
+  <Step title="Download the files">
+    Download the files from{" "}
+    <a href="https://portal.cfx.re">
+      CFX Portal and add to your resource folder.
+    </a>
+  </Step>
+  <Step title="Add to server.cfg">
+    All dependencies used by **smzi_charactercreator** need to be started before
+    the asset itself. The resource **smzi_skinmanager** should be started before
+    **smzi_charactercreator** with `start smzi_skinmanager` in `server.cfg`.
+  </Step>
+  <Step title="Configure">
+    To get the best personalization out of the asset, you can configure it and
+    choose which components the players can add to their character.
+  </Step>
+</Steps>

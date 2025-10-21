@@ -1,0 +1,49 @@
+---
+title: "Introduction"
+description: "Welcome on the Skin Manager documentation"
+---
+
+## What is Character Creator ?
+
+SkinManager is a revisited version of skinChanger, you can choose the appearance of your character then save it to your database. It is a **free standalone** resource.
+
+_Note_: Collection Management will be added later
+
+## Installation
+
+<Steps>
+    <Step title="Download the files">
+        Download the files from <a href="https://portal.cfx.re">CFX Portal</a> or <a href="https://github.com/SebMZI/smzi_skinmanager.git">GitHub</a> and add to your resource folder.
+    </Step>
+    <Step title="Modify Core">
+        If using esx as your framework, you will need to change this in `es_extended/client/functions.lua` <br/><br/>
+        Before
+        ```LUA
+        function ESX.SpawnPlayer(skin, coords, cb)
+            ...
+            TriggerEvent("skinChanger:client:loadSkin", skin, function()
+                p:resolve()
+            end)
+            ...
+        end
+        ```
+        After
+        ```LUA
+        function ESX.SpawnPlayer(skin, coords, cb)
+            ...
+            TriggerEvent("smzi_skinmanager:client:loadSkin", skin, function()
+                p:resolve()
+            end)
+            ...
+        end
+        ```
+
+    </Step>
+    <Step title="Add to server.cfg">
+        All resources using **smzi_skinmanager** should be started after the asset itself using `start {resourceName}`.
+    </Step>
+    <Step title="Configuration">
+        The asset should work right out of the box, but please make sure to check the `server/main.lua` file and configure the resource for your framework
+    </Step>
+
+</Steps>
