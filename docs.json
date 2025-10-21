@@ -15,10 +15,17 @@
         "groups": [
           {
             "group": "Character Creator",
-            
             "pages": [
               {
+                "group": "introduction",
+                "hidden": true,
+                "pages": [
+                  "character_creator/introduction"
+                ]
+              }, 
+              {
                 "group": "Client",
+                "expanded": true,
                 "pages": [
                   "character_creator/client/exports",
                   "character_creator/client/events",
