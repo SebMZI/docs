@@ -8,6 +8,8 @@ description: "Welcome on the Skin Manager documentation"
 SkinManager is a revisited version of skinChanger, you can choose the appearance of your character then save it to your database. It is a **free standalone** resource.
 Best to use with <a href="../character_creator/introduction">Character Creator</a>.
 
+**Important**: This script doesn't work with a multicharacter server yet
+
 _Note_: Collection Management will be added later
 
 ## Contributors
@@ -33,6 +35,13 @@ _Note_: Collection Management will be added later
     <Step title="Download the files">
         Download the files from <a href="https://portal.cfx.re">CFX Portal</a> or <a href="https://github.com/SebMZI/smzi_skinmanager.git">GitHub</a> and add to your resource folder.
     </Step>
+    <Step title="Delete resources">
+        To make the script work correctly, you need to remove these resources:
+        - esx_skin
+        - esx_multicharacter
+        - skinchanger
+        - qb_multicharacter
+    </Step>
     <Step title="Modify Core">
         If using esx as your framework, you will need to change this in `es_extended/client/functions.lua` <br/><br/>
         Before
@@ -55,7 +64,6 @@ _Note_: Collection Management will be added later
             ...
         end
         ```
-
     </Step>
     <Step title="Add to server.cfg">
         All resources using **smzi_skinmanager** should be started after the asset itself using `start {resourceName}`.
