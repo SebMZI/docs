@@ -16,13 +16,7 @@
           {
             "group": "Character Creator",
             "pages": [
-              {
-                "group": "introduction",
-                "hidden": true,
-                "pages": [
-                  "character_creator/introduction"
-                ]
-              }, 
+              "character_creator/introduction",
               {
                 "group": "Client",
                 "expanded": true,
@@ -53,6 +47,7 @@
           {
             "group": "Skin Manager",
             "pages": [
+              "skin_manager/introduction",
               {
                 "group": "Client",
                 "pages": [
