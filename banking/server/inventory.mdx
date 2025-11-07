@@ -1,0 +1,80 @@
+---
+title: "Inventory"
+description: "How the inventory integration works in the banking system"
+---
+
+## addCardToInventory
+
+This function adds the card item defined in `config.lua` to the player's inventory, if the player can carry it. It also attaches metadata such as the **card ID** and **account identifier**.
+
+### ox_inventory
+
+```LUA
+--- Add card with metadata to player Inventory
+--- @param source integer # Player source
+--- @param metadata table # Contains metadata of the card (cardId, accountIdentifier)
+--- @return boolean # Success
+function addCardToInventory(source, metadata)
+    assert(math.type(source) == "integer", "Source needs to be an integer")
+    assert(type(metadata) == "table", "Metadta")
+    local isSuccess = false
+
+    local canCarryItem = exports.ox_inventory:CanCarryItem(source, Config.item, 1, metadata)
+    if canCarryItem then
+        local availableSlot = exports.ox_inventory:GetEmptySlot(source)
+        exports.ox_inventory:AddItem(source, Config.item, 1, metadata, availableSlot, function(success)
+            if success then
+                sendDebugMessage("debug", "Item correctly added to inventory")
+                isSuccess = true
+            else
+                sendDebugMessage("error", "Failed to add item to inventory")
+                isSuccess = false
+            end
+        end)
+    else
+        sendDebugMessage("debug", "Inventory Full")
+        isSuccess = false
+    end
+    return isSuccess
+end
+```
+
+### qb-inventory
+
+```LUA
+--- Add card with metadata to player Inventory
+--- @param source integer # Player source
+--- @param metadata table # Contains metadata of the card (cardId, accountIdentifier)
+--- @return boolean # Success
+function addCardToInventory(source, metadata)
+    assert(math.type(source) == "integer", "Source needs to be an integer")
+    assert(type(metadata) == "table", "Metadta")
+    local isSuccess = false
+
+    local canCarryItem, reason = exports['qb-inventory']:CanAddItem(source, Config.item, 1)
+
+    if canCarryItem then
+        local success = exports['qb-inventory']:AddItem(source, Config.item, 1, false, metadata, 'Add card to inventory')
+
+        if success then
+            sendDebugMessage("debug", "Item correctly added to inventory")
+            isSuccess = true
+        else
+            sendDebugMessage("error", "Failed to add item to inventory")
+            isSuccess = false
+        end
+    else
+        sendDebugMessage("debug", "Inventory Full " .. reason)
+        isSuccess = false
+    end
+    return isSuccess
+end
+```
+
+### Notes
+
+Make sure your inventory system is correctly configured in config.lua (e.g., `"ox_inventory"` or `"qb-inventory"`).
+
+The metadata is essential for linking the card to the correct bank account — do not omit or rename its fields.
+
+If your framework uses a custom inventory system, you can implement your own version of `addCardToInventory` inside `client/inventory` and `server/inventory`.

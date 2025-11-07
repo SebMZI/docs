@@ -1,0 +1,95 @@
+---
+title: "Inventory"
+description: "How the inventory system integrates with the banking resource"
+---
+
+## Overview
+
+This section explains how the banking system retrieves player cards from different inventory systems. You can adapt or extend these examples depending on which framework your server uses.
+
+### ox_inventory
+
+Retrieves all the card items (defined in `Config.item`) from the player's inventory, including their metadata.
+
+```LUA
+--- Get all the cards with metadata the player has on him
+--- @return cards table # All cards player in his inventory
+function GetPlayerCards()
+    local cards = {}
+    local items <const> = exports.ox_inventory:GetPlayerItems()
+
+    if items and next(items) then
+        for i = 1, #items do
+            local item <const> = items[i]
+            if item.name == Config.item then
+                table.insert(cards, item)
+            end
+        end
+    end
+
+    return cards
+end
+```
+
+**Explanation:**
+
+- `GetPlayerItems()` fetches all items the player currently holds.
+
+- Each item is checked against `Config.item` (e.g., `'visa'`).
+
+- Matching items are inserted into the cards table.
+
+- Each card retains its metadata (e.g., `cardId`, `accountIdentifier`).
+
+### qb-inventory
+
+Retrieves all player cards through a server callback, reformats the data, and returns a structured list of cards.
+
+```LUA
+--- Get all the cards with metadata the player has on him
+--- @return cards table # All cards player in his inventory
+function GetPlayerCards()
+    local cards = {}
+    local p = promise.new()
+
+    TriggerServerCallback("smzi_banking:getPlayerCards", function(cardsInInventory)
+        local formattedAccounts = {}
+
+        for i = 1, #cardsInInventory do
+            local card = cardsInInventory[i]
+
+            card.metadata = card.info
+            table.insert(formattedAccounts, card)
+        end
+
+        cards = formattedAccounts
+        p:resolve()
+    end)
+
+    Citizen.Await(p)
+
+    return cards
+end
+```
+
+**Explanation:**
+
+- The client requests card data from the server via `smzi_banking:getPlayerCards`.
+
+- Metadata (`card.info`) is assigned to a consistent `card.metadata` field.
+
+- The data is formatted and resolved using a promise.
+
+- The function waits for completion using `Citizen.Await(p)` before returning the result.
+
+### Notes
+
+- The returned table from both functions is used to identify which accounts or cards a player currently holds.
+
+- You can extend these functions to support custom inventories by following the same logic pattern.
+
+- Ensure that the inventory name in your `config.lua` matches your server setup:
+
+```LUA
+Config.inventory = "ox_inventory"
+```

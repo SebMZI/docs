@@ -1,0 +1,151 @@
+---
+title: "Configuration"
+description: "How to configure the resource"
+---
+
+## Overview
+
+This section explains how to configure every part of the **SMZI Banking** resource — from ATMs and banks to Discord logging and inventory integration.
+
+---
+
+### ATM Props
+
+These are the prop models that the system will detect to allow players to open the NUI.
+
+```lua
+--- ATM Props that will be detected by the system
+Config.atmProps = {
+    `prop_atm_01`,
+    `prop_atm_02`,
+    `prop_atm_03`,
+    `prop_fleeca_atm`,
+    ...
+}
+```
+
+### Banks
+
+Define the locations of the banks on your server.
+A marker will appear at each location.
+If you set isMain to `true`, the blip will appear differently.
+
+```lua
+Config.banks = {
+    {
+        name = "Fleeca Bank",
+        isMain = true,
+        location =  vector3(149.947266, -1040.558228, 29.364136)
+    },
+    ...
+}
+```
+
+### Blips
+
+Configure the appearance of blips as you prefer (color, sprite, scale, etc.).
+
+```lua
+Config.blips = {
+    ["atm"] = {
+        sprite = 108,
+        color = 2,
+        scale = 0.7,
+        shortRange = true,
+        name = "ATM",
+    },
+    ["bank"] = {
+        sprite = 500,
+        color = 2,
+        scale = 0.7,
+        shortRange = true
+    },
+    ["main_bank"] = {
+        sprite = 500,
+        color = 26,
+        scale = 0.7,
+        shortRange = true
+    }
+}
+
+```
+
+### Blacklisted Words
+
+Define words that players cannot use when creating their IBAN.
+
+```lua
+--- Words that are blacklisted to create in an IBAN
+Config.ibanBlacklistedWords = {
+    "sex",
+    "segs",
+    "hitler",
+    "poutine",
+    "trump"
+    ...
+}
+```
+
+### Target
+
+By default, targeting is disabled.
+You can manage the target system directly from the `client/target` folder.
+If you want to use another target, edit the settings in `config.lua` and create a new file in `client/target`.
+
+```lua
+Config.target = {
+    enabled = false,
+    name = "ox_target"
+}
+
+```
+
+### Inventory System
+
+Just like the target system, you can choose your inventory and create a corresponding file in both `client/inventory` and `server/inventory`.
+The inventories currently supported are **ox_inventory** and **qb-inventory**
+
+```lua
+Config.inventory = "qb-inventory" --- 'ox_inventory', 'qb-inventory'
+```
+
+### Item
+
+When a player orders a new card, it will be delivered to their inventory.
+The item name must match the one defined below.
+
+```lua
+Config.item = 'visa'
+```
+
+### Pricing
+
+Define the prices for each action and the account from which the money will be deducted.
+Don’t forget to update the price in the locales: `"nui_iban_change_msg"` and `"nui_card_order"`.
+
+```lua
+Config.prices = {
+    accountName = "bank", --- Account to remove the money from
+    ibanChange = 480, --- First IBAN Change is free, then charged the amount
+    cardOrder = 200
+}
+```
+
+### Banking for Societies
+
+Allow societies to create bank accounts.
+By default, this option is disabled (`false`).
+For **ESX**, society accounts work out of the box.
+For **QBCore**, additional configuration is required.
+
+```lua
+Config.society = false
+```
+
+### Discord Logs
+
+You don't believe a player ? You can review their banking actions directly on Discord. Just make sure to set your webhook in `webhooks/webhooks.lua`.
+
+```lua
+Config.webhook = true
+```

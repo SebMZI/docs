@@ -1,0 +1,52 @@
+---
+title: "Introduction"
+description: "Welcome on the banking documentation"
+---
+
+## What is Banking?
+
+Banking is a realistic and modern banking experience for FiveM. Manage your IBAN, review detailed transaction logs, and use your bank cards to access funds at ATMs or banks. Designed for performance, immersion, and compatibility with custom economy systems.
+
+## Documentation
+
+<Columns cols={2}>
+  <Card title="Client" icon="laptop" href="/banking/client/frameworks">
+    Client-side
+  </Card>
+  <Card title="Server" icon="server" href="/banking/server/frameworks">
+    Server-side
+  </Card>
+</Columns>
+<Card
+  title="Configuration"
+  icon="toolbox"
+  href="/banking/configuration/configuration"
+>
+  Configuration
+</Card>
+
+## Installation
+
+<Steps>
+  <Step title="Install the dependencies">
+    The following dependencies are used but can be modified as you like: <br />-
+    **ox_inventory** (ESX) <br />- **esx_addonaccount** (ESX) <br />-
+    **qb-inventory** (QBCore) <br />- **ox_target** (Optional)
+  </Step>
+  <Step title="Download the files">
+    Download the files from
+    <a href="https://portal.cfx.re">CFX portal</a> and add to your resource folder.
+  </Step>
+  <Step title="Add to server.cfg">
+    If you use dependencies for the script they need to be started before the
+    asset itself. Add `ensure smzi_banking` to your `server.cfg` file
+  </Step>
+  <Step title="Update your database">
+    Use the SQL request in the file `smzi_banking.sql` to create the table.
+  </Step>
+  <Step title="Configure">
+    To get the best personalization out of the asset, please check the
+    `config.lua` file and the <a href="./configuation">configuration</a>{" "}
+    section.
+  </Step>
+</Steps>

@@ -1,0 +1,73 @@
+---
+title: "Target"
+description: "How the target system integrates with the banking resource"
+---
+
+## Overview
+
+The target system lets players interact with **ATMs** and **bank locations** to access the banking NUI. This section explains how to register targets for both types of interaction.
+
+---
+
+### Target on ATM
+
+Detects ATM models defined in `Config.atmProps` and allows players to open the NUI when interacting with them.
+
+```lua
+exports.ox_target:addModel(Config.atmProps, {
+    {
+        name = "open_nui_bank_atm",
+        label = Translate("target_open_bank"),
+        icon = "fa-solid fa-money-bill",
+        distance = Config.distances.distanceToInteract,
+        onSelect = function(data)
+            ToggleBankingNUI(true, false)
+        end
+    }
+})
+```
+
+**Explanation:**
+
+- `Config.atmProps` — the list of ATM models to detect.
+
+- `distance` — how close the player must be to interact.
+
+- ToggleBankingNUI(true, false) — opens the banking NUI in ATM mode.
+
+### Target on Location
+
+Detects players near a configured bank location and lets them open the NUI.
+Each bank from `Config.banks` will have its own interactive zone.
+
+```lua
+exports.ox_target:addModel(Config.atmProps, {
+    {
+        name = "open_nui_bank_atm",
+        label = Translate("target_open_bank"),
+        icon = "fa-solid fa-money-bill",
+        distance = Config.distances.distanceToInteract,
+        onSelect = function(data)
+            ToggleBankingNUI(true, false)
+        end
+    }
+})
+```
+
+**Explanation:**
+
+- `bank.location` — coordinates of each bank defined in config.lua.
+
+- `addBoxZone` — creates a targetable area around the location.
+
+- ToggleBankingNUI(true, true) — opens the banking NUI in bank mode.
+
+- `drawSprite = false` — hides the default visual marker.
+
+### Notes
+
+You can replace `ox_target` with any other target system by creating a new handler in `client/target`.
+
+If you modify the distance or props, remember to update both the client configuration and the visuals to match your design.
+
+Make sure `Config.target.enabled = true` in your `config.lua` file to activate the feature.

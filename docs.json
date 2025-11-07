@@ -14,55 +14,26 @@
         "tab": "Docs",
         "groups": [
           {
-            "group": "Character Creator",
+            "group": "Banking",
             "pages": [
-              "character_creator/introduction",
+              "banking/introduction",
               {
                 "group": "Client",
                 "expanded": true,
                 "pages": [
-                  "character_creator/client/exports",
-                  "character_creator/client/events",
-                  "character_creator/client/commands"
+                  "banking/client/frameworks",
+                  "banking/client/inventory",
+                  "banking/client/target"
                 ]
               }, 
               {
                 "group": "Server",
                 "pages": [
-                  "character_creator/server/exports",
-                  "character_creator/server/events"
+                  "banking/server/frameworks",
+                  "banking/server/inventory"
                 ]
               },
-              {
-                "group": "Configuration",
-                "pages": [
-                  "character_creator/configuration/locations",
-                  "character_creator/configuration/components",
-                  "character_creator/configuration/age",
-                  "character_creator/configuration/buckets"
-                ]
-              }  
-            ]
-          },         
-          {
-            "group": "Skin Manager",
-            "pages": [
-              "skin_manager/introduction",
-              {
-                "group": "Client",
-                "pages": [
-                  "skin_manager/client/exports",
-                  "skin_manager/client/events"
-                ]
-              },
-              {
-                "group": "Server",
-                "pages": [
-                  "skin_manager/server/exports",
-                  "skin_manager/server/events",
-                  "skin_manager/server/functions"
-                ]
-              }
+              "banking/configuration/configuration"
             ]
           }       
         ]

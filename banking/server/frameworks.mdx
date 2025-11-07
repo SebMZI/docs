@@ -1,0 +1,796 @@
+---
+title: "Frameworks"
+description: "How the banking system connects to each framework on the server side."
+---
+
+## Overview
+
+This page describes how **SMZI Banking** integrates with various server frameworks.  
+Each implementation defines how money, societies, and transfers are managed internally.
+
+---
+
+## GetPlayerFromIdentifier
+
+Retrieves a player object based on their license or character identifier.
+
+### ESX
+
+```LUA
+--- Get xPlayer from license
+--- @param identifier string # License or char:....
+--- @return table|nil
+function GetPlayerFromIdentifier(identifier)
+    local players = ESX.GetExtendedPlayers()
+
+    for _, xPlayer in pairs(players) do
+        local cleanIdentifier = xPlayer.identifier:match("([^:]+)$") or xPlayer.identifier
+
+        if cleanIdentifier == identifier then
+            return xPlayer
+        end
+    end
+
+    return nil
+end
+```
+
+### QBCore
+
+```LUA
+--- Get Player from license
+--- @param identifier string # License
+--- @return table|nil
+function GetPlayerFromIdentifier(identifier)
+    local players = QBCore.Functions.GetQBPlayers()
+    for _, Player in pairs(players) do
+        local license = Player.PlayerData.license
+
+        -- Clean identifier if it has prefix
+        local cleanIdentifier = identifier:match("([^:]+)$") or identifier
+        local cleanLicense = license:match("([^:]+)$") or license
+        if cleanLicense == cleanIdentifier then
+            return Player
+        end
+    end
+
+    return nil
+end
+```
+
+## GetBankAccountMoney
+
+Retrieves the amount of money available on a player's or society's bank account.
+
+### Custom
+
+```LUA
+--- Retrieve the amount of money on the bank account
+--- @param source integer # Player source
+--- @param identifier string # player identifier (license without "license:") or society name
+--- @param isSociety boolean
+--- @param cb function # Callback function
+function GetBankAccountMoney(source, identifier, isSociety, cb)
+    assert(math.type(source) == "integer", "Source has to be an integer!")
+    cb(0)
+end
+```
+
+### ESX
+
+```LUA
+--- Retrieve the amount of money on the bank account
+--- @param source integer # Player source
+--- @param identifier string # player identifier (license without "license:") or society name
+--- @param isSociety boolean
+--- @param cb function # Callback function
+function GetBankAccountMoney(source, identifier, isSociety, cb)
+    assert(math.type(source) == "integer", "Source has to be an integer!")
+    assert(type(cb) == "function", "Callback must be a function!")
+
+    if not isSociety then
+        local xPlayer = GetPlayerFromIdentifier(identifier)
+        if not xPlayer or not next(xPlayer) then
+            cb(0)
+        else
+            local money = xPlayer.getAccount("bank").money or 0
+            cb(money)
+        end
+    else
+        if GetResourceState("esx_addonaccount") == "started" then
+            TriggerEvent('esx_addonaccount:getSharedAccount', "society_"..identifier, function(account)
+                if account and next(account) then
+                    cb(account.money)
+                else
+                    cb(0)
+                end
+            end)
+        else
+            cb(0)
+        end
+    end
+end
+```
+
+### QBCore
+
+```LUA
+--- Retrieve the amount of money on the bank account
+--- @param source integer # Player source
+--- @param identifier string # player identifier (citizenid/license) or society name
+--- @param isSociety boolean
+--- @param cb function # Callback function
+function GetBankAccountMoney(source, identifier, isSociety, cb)
+    assert(math.type(source) == "integer", "Source has to be an integer!")
+    assert(type(cb) == "function", "Callback must be a function!")
+
+    if not isSociety then
+        local Player = GetPlayerFromIdentifier(identifier)
+        if not Player then
+            cb(0)
+        else
+            local money = Player.PlayerData.money.bank or 0
+            cb(money)
+        end
+    else
+        -- QBCore utilise qb-management pour les sociétés
+        if GetResourceState("qb-management") == "started" then
+           cb(0)
+        else
+            cb(0)
+        end
+    end
+end
+```
+
+## depositMoney
+
+Retrieves the amount of money available on a player's or society's bank account.
+
+### Custom
+
+```LUA
+--- Retrieve the amount of money on the bank account
+--- @param source integer # Player source
+--- @param identifier string # player identifier (license without "license:") or society name
+--- @param isSociety boolean
+--- @param cb function # Callback function
+function GetBankAccountMoney(source, identifier, isSociety, cb)
+    assert(math.type(source) == "integer", "Source has to be an integer!")
+    cb(0)
+end
+```
+
+### ESX
+
+```LUA
+--- Deposit player's money into bank account
+--- @param source integer # Player source
+--- @param identifier string # player identifier (license without "license:") or society name
+--- @param isSociety boolean # If  "society"
+--- @param amountToDeposit integer # Amount of money to withdraw from player to bank account
+--- @param cb function
+function DepositMoney(source, identifier, isSociety, amountToDeposit, cb)
+    assert(math.type(source) == "integer", "Source must be an integer")
+    assert(type(identifier) == "string", "identifier must be a string")
+    assert(type(isSociety) == "boolean", "isSociety must be a boolean")
+    assert(math.type(amountToDeposit) == "integer", "Amount to deposit must be an integer")
+
+    local xPlayer <const> = ESX.GetPlayerFromId(source)
+    if not xPlayer or not next(xPlayer) then cb({success = false, money = nil}) return end
+    local moneyAccount <const> = xPlayer.getAccount("money")
+
+    if moneyAccount.money < amountToDeposit then cb({success = false, money = moneyAccount.money}) return end
+
+    xPlayer.removeAccountMoney("money", amountToDeposit, "Bank deposit")
+
+    if not isSociety then
+        xPlayer.addAccountMoney("bank", amountToDeposit, "Deposit")
+        AddToLog(source, identifier, {
+            status = Translate("nui_status_deposit"),
+            date = os.time(),
+            description = Translate("nui_status_deposit_msg"),
+            amount = amountToDeposit
+        })
+        cb({success = true, money = xPlayer.getAccount("money").money})
+        SendWebhook(webhook.link, string.format("%s (license: %s) - Made a deposit of $%s to %s bank account (%s)", xPlayer.getName(), xPlayer.getIdentifier(), amountToDeposit, GetPlayerFromIdentifier(identifier).getName() or identifier, identifier))
+        return
+    else
+        if GetResourceState("esx_addonaccount") == "started" then
+            TriggerEvent('esx_addonaccount:getSharedAccount', "society_"..identifier, function(account)
+                if account and next(account) then
+                    account.addMoney(amountToDeposit)
+                    cb({success = true, money = xPlayer.getAccount("money").money})
+                    SendWebhook(webhook.link, string.format("%s (license: %s) - Made a deposit of $%s to %s bank account (%s)", xPlayer.getName(), xPlayer.getIdentifier(), amountToDeposit, GetPlayerFromIdentifier(identifier).getName() or identifier, identifier))
+
+                    return
+                end
+            end)
+        end
+    end
+end
+```
+
+### QBCore
+
+```LUA
+--- Deposit player's money into bank account
+--- @param source integer # Player source
+--- @param identifier string # player identifier (citizenid/license) or society name
+--- @param isSociety boolean # If "society"
+--- @param amountToDeposit integer # Amount of money to deposit
+--- @param cb function
+function DepositMoney(source, identifier, isSociety, amountToDeposit, cb)
+    assert(math.type(source) == "integer", "Source must be an integer")
+    assert(type(identifier) == "string", "identifier must be a string")
+    assert(type(isSociety) == "boolean", "isSociety must be a boolean")
+    assert(math.type(amountToDeposit) == "integer", "Amount to deposit must be an integer")
+
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then cb({success = false, money = nil}) return end
+
+    if not isSociety then
+        local cashMoney = Player.PlayerData.money.cash or 0
+
+        if cashMoney < amountToDeposit then cb({success = false, money = cashMoney}) return end
+        Player.Functions.RemoveMoney("cash", amountToDeposit, "Bank deposit")
+        Player.Functions.AddMoney("bank", amountToDeposit, "Bank deposit")
+
+        AddToLog(source, identifier, {
+            status = Translate("nui_status_deposit"),
+            date = os.time(),
+            description = Translate("nui_status_deposit_msg"),
+            amount = amountToDeposit
+        })
+
+        cb({success = true, money = Player.PlayerData.money.cash - amountToDeposit})
+
+        SendWebhook(webhook.link, string.format("%s (CitizenId: %s) - Made a deposit of $%s to %s bank account (%s)", Player.PlayerData.name, Player.PlayerData.citizenid, amountToDeposit, GetPlayerFromIdentifier(identifier).PlayerData.name or identifier, identifier))
+        return
+    else
+        if GetResourceState("qb-management") == "started" then
+            cb({success = false, money = 0})
+        else
+            cb({success = false, money = 0})
+        end
+    end
+end
+```
+
+## withdrawMoney
+
+Transfers money from a player’s or society’s bank account into their cash.
+
+### Custom
+
+```LUA
+--- Withdraw player's money into bank account
+--- @param source integer # Player source
+--- @param identifier string # player identifier (license without "license:") or society name
+--- @param isSociety boolean # If  "society"
+--- @param amountToWithdraw integer # Amount of money to withdraw from player to bank account
+--- @param cb function
+function WithdrawMoney(source, identifier, isSociety, amountToWithdraw, cb)
+end
+
+```
+
+### ESX
+
+```LUA
+--- Withdraw player's money into bank account
+--- @param source integer # Player source
+--- @param identifier string # player identifier (license without "license:") or society name
+--- @param isSociety boolean # If  "society"
+--- @param amountToWithdraw integer # Amount of money to withdraw from player to bank account
+--- @param cb function
+function WithdrawMoney(source, identifier, isSociety, amountToWithdraw, cb)
+    assert(math.type(source) == "integer", "Source must be an integer")
+    assert(type(identifier) == "string", "identifier must be a string")
+    assert(type(isSociety) == "boolean", "isSociety must be a boolean")
+    assert(math.type(amountToWithdraw) == "integer", "Amount to withdraw must be an integer")
+
+    if not isSociety then
+        local xPlayer = GetPlayerFromIdentifier(identifier)
+        if not xPlayer or not next(xPlayer) then cb({success = false, money = nil}) return end
+        local bankAccount <const> = xPlayer.getAccount("bank")
+
+        if amountToWithdraw > bankAccount.money then cb({success = false, money = nil}) return end
+
+        xPlayer.removeAccountMoney("bank", amountToWithdraw, "Withdraw")
+        xPlayer.addAccountMoney("money", amountToWithdraw, "Deposit")
+        AddToLog(source, identifier, {
+            status = Translate("nui_status_withdraw"),
+            date = os.time(),
+            description = Translate("nui_status_withdraw_msg"),
+            amount = -amountToWithdraw
+        })
+
+        cb({success = true, money = xPlayer.getAccount("bank").money})
+        SendWebhook(webhook.link, string.format("%s (license: %s) - Made a withdraw of $%s from %s bank account (%s)", ESX.GetPlayerFromId(source).getName(), ESX.GetPlayerFromId(source).getIdentifier(), amountToWithdraw, GetPlayerFromIdentifier(identifier).getName() or identifier, identifier))
+
+    else
+        if GetResourceState("esx_addonaccount") == "started" then
+            TriggerEvent('esx_addonaccount:getSharedAccount', "society_"..identifier, function(account)
+                if account and next(account) then
+                    local bankMoney = account.money
+
+                    if amountToWithdraw > bankMoney then cb({success = false, money = nil}) return end
+
+                    local xPlayer = GetPlayerFromIdentifier(identifier)
+                    if not xPlayer or not next(xPlayer) then cb({success = false, money = nil}) return end
+
+                    account.removeMoney(amountToWithdraw)
+                    xPlayer.addAccountMoney("money", amountToWithdraw, "Deposit")
+                    bankMoney = bankMoney - amountToWithdraw
+
+                    AddToLog(source, identifier, {
+                        status = Translate("nui_status_withdraw"),
+                        date = os.time(),
+                        description = Translate("nui_status_withdraw_msg"),
+                        amount = -amountToWithdraw
+                    })
+                    cb({success = true, money = bankMoney})
+                    SendWebhook(webhook.link, string.format("%s (license: %s) - Made a withdraw of $%s from %s bank account (%s)", ESX.GetPlayerFromId(source).getName(), ESX.GetPlayerFromId(source).getIdentifier(), amountToWithdraw, GetPlayerFromIdentifier(identifier).getName() or identifier, identifier))
+
+                end
+            end)
+        end
+    end
+end
+```
+
+### QBCore
+
+```LUA
+--- Withdraw player's money from bank account
+--- @param source integer # Player source
+--- @param identifier string # player identifier (citizenid/license) or society name
+--- @param isSociety boolean # If "society"
+--- @param amountToWithdraw integer # Amount of money to withdraw
+--- @param cb function
+function WithdrawMoney(source, identifier, isSociety, amountToWithdraw, cb)
+    assert(math.type(source) == "integer", "Source must be an integer")
+    assert(type(identifier) == "string", "identifier must be a string")
+    assert(type(isSociety) == "boolean", "isSociety must be a boolean")
+    assert(math.type(amountToWithdraw) == "integer", "Amount to withdraw must be an integer")
+
+    if not isSociety then
+        local Player = GetPlayerFromIdentifier(identifier)
+        if not Player then cb({success = false, money = nil}) return end
+
+        local bankMoney = Player.PlayerData.money.bank or 0
+
+        if amountToWithdraw > bankMoney then cb({success = false, money = nil}) return end
+
+        Player.Functions.RemoveMoney("bank", amountToWithdraw)
+        Player.Functions.AddMoney("cash", amountToWithdraw)
+
+        AddToLog(source, identifier, {
+            status = Translate("nui_status_withdraw"),
+            date = os.time(),
+            description = Translate("nui_status_withdraw_msg"),
+            amount = -amountToWithdraw
+        })
+
+        cb({success = true, money = Player.PlayerData.money.bank - amountToWithdraw})
+
+        SendWebhook(webhook.link, string.format("%s (CitizenId: %s) - Made a withdraw of $%s from %s bank account (%s)", QBCore.Functions.GetPlayer(source).PlayerData.name, QBCore.Functions.GetPlayer(source).PlayerData.citizenid, amountToWithdraw, GetPlayerFromIdentifier(identifier).PlayerData.name or identifier, identifier))
+    else
+        if GetResourceState("qb-management") == "started" then
+            cb({success = false, money = 0})
+        else
+            cb({success = false, money = 0})
+        end
+    end
+end
+```
+
+## transferMoney
+
+Transfers money from a player’s or society’s bank account into another player’s or society’s bank account.
+
+### Custom
+
+```LUA
+--- Transfer Bank money to IBAN
+--- @param source integer # Player source
+--- @param fromIdentifier string # sender - player identifier (license without "license:") or society name
+--- @param toIdentifier string # receiver - player identifier (license without "license:") or society name
+--- @param isFromSociety boolean # If sender is "society"
+--- @param isToSociety boolean # If receiver is "society"
+--- @param amountToTransfer integer # Amount of money to transfer from player's bank to identifier
+--- @param ibanToTransferTo string # Receiver IBAN
+--- @param fromLabel string # Sender Label
+--- @param toLabel string # Receiver Label
+--- @param cb function
+function TransferMoney(source, fromIdentifier, toIdentifier, isFromSociety, isToSociety, amountToTransfer, ibanToTransferTo, fromLabel, toLabel, cb)
+end
+```
+
+### ESX
+
+```LUA
+--- Transfer Bank money to IBAN
+--- @param source integer # Player source
+--- @param fromIdentifier string # sender - player identifier (license without "license:") or society name
+--- @param toIdentifier string # receiver - player identifier (license without "license:") or society name
+--- @param isFromSociety boolean # If sender is "society"
+--- @param isToSociety boolean # If receiver is "society"
+--- @param amountToTransfer integer # Amount of money to transfer from player's bank to identifier
+--- @param ibanToTransferTo string # Receiver IBAN
+--- @param fromLabel string # Sender Label
+--- @param toLabel string # Receiver Label
+--- @param cb function
+function TransferMoney(source, fromIdentifier, toIdentifier, isFromSociety, isToSociety, amountToTransfer, ibanToTransferTo, fromLabel, toLabel, cb)
+    assert(math.type(source) == "integer", "Source must be an integer")
+    assert(type(fromIdentifier) == "string", "from identifier must be a string")
+    assert(type(toIdentifier) == "string", "to identifier must be a string")
+    assert(type(isFromSociety) == "boolean", "isFromSociety must be a boolean")
+    assert(type(isToSociety) == "boolean", "isToSociety must be a boolean")
+    assert(math.type(amountToTransfer) == "integer", "Amount to transfer must be an integer")
+    assert(type(ibanToTransferTo) == "string", "IBAN must be a string")
+    assert(type(fromLabel) == "string", "From Label must be a string")
+    assert(type(toLabel) == "string", "To Label must be a string")
+
+    if isToSociety then
+        if isFromSociety then
+            if GetResourceState("esx_addonaccount") ~= "started" then sendDebugMessage("error", "AddOnAccount not started") return end
+            TriggerEvent('esx_addonaccount:getSharedAccount', "society_"..fromIdentifier, function(account)
+                if account and next(account) then
+                    local money = account.money
+                    if amountToTransfer > money then cb({success = false, errorMsg = "Not enough money"}) return end
+
+                    local xPlayer = GetPlayerFromIdentifier(fromIdentifier)
+                    if not xPlayer or not next(xPlayer) then cb({success = false, errorMsg = "No player found for source " .. source}) return end
+
+                    account.removeMoney(amountToTransfer)
+
+                    TriggerEvent('esx_addonaccount:getSharedAccount', "society_"..toIdentifier, function(toAccount)
+                        if toAccount and next(toAccount) then
+                            toAccount.addMoney(amountToTransfer)
+                            money = money - amountToTransfer
+                            AddToLog(source, fromIdentifier, {
+                                status =  Translate("nui_status_transfer"),
+                                date = os.time(),
+                                description = Translate("nui_status_transfer_msg"),
+                                amount = -amountToTransfer,
+                                to = toLabel
+                            })
+                            AddToLog(nil, toIdentifier, {
+                                status = Translate("nui_status_transfer"),
+                                date = os.time(),
+                                description = Translate("nui_status_transfer_msg"),
+                                amount = amountToTransfer,
+                                from = xPlayer.getName()
+                            })
+                            cb({success = true, money = money})
+                            SendWebhook(webhook.link, string.format("%s (license: %s) - Made a transfer of $%s from %s to %s bank account (%s)", ESX.GetPlayerFromId(source).getName(), ESX.GetPlayerFromId(source).getIdentifier(), fromIdentifier ,amountToTransfer, toIdentifier, toIdentifier))
+
+                            return
+                        else
+                            sendDebugMessage("error", "No account for identifier " .. toIdentifier)
+                            cb({success = false, errorMsg = "No account for identifier " .. toIdentifier})
+                            return
+                        end
+                    end)
+                else
+                    sendDebugMessage("error", "No account for identifier " .. fromIdentifier)
+                    cb({success = false, errorMsg = "No account for identifier " .. fromIdentifier})
+                    return
+                end
+            end)
+        else
+            if GetResourceState("esx_addonaccount") ~= "started" then sendDebugMessage("error", "AddOnAccount not started") return end
+            TriggerEvent('esx_addonaccount:getSharedAccount', "society_"..toIdentifier, function(toAccount)
+                if toAccount and next(toAccount) then
+                    local xPlayer = GetPlayerFromIdentifier(fromIdentifier)
+                    if not xPlayer or not next(xPlayer) then cb({success = false, errorMsg = "No player found for source " .. source}) return end
+                    local bankAccount <const> = xPlayer.getAccount("bank")
+                    if amountToTransfer > bankAccount.money then cb({success = false, errorMsg = "Not enough money"}) return end
+
+                    xPlayer.removeAccountMoney("bank", amountToTransfer, "Transfer to " .. toLabel)
+
+                    toAccount.addMoney(amountToTransfer)
+
+                    AddToLog(source, fromIdentifier, {
+                        status = Translate("nui_status_transfer"),
+                        date = os.time(),
+                        description = Translate("nui_status_transfer_msg"),
+                        amount = -amountToTransfer,
+                        to = toLabel
+                    })
+                    AddToLog(nil, toIdentifier, {
+                        status = Translate("nui_status_transfer"),
+                        date = os.time(),
+                        description = Translate("nui_status_transfer_msg"),
+                        amount = amountToTransfer,
+                        from = xPlayer.getName()
+                    })
+                    cb({success = true, money = xPlayer.getAccount("bank").money})
+                    SendWebhook(webhook.link, string.format("%s (license: %s) - Made a transfer of $%s from %s to %s bank account (%s)", ESX.GetPlayerFromId(source).getName(), ESX.GetPlayerFromId(source).getIdentifier(), fromIdentifier ,amountToTransfer, toIdentifier, toIdentifier))
+                    return
+                else
+                    sendDebugMessage("error", "No account for identifier " .. toIdentifier)
+                    cb({success = false, errorMsg = "No account for identifier " .. toIdentifier})
+                    return
+                end
+            end)
+        end
+    else
+        if isFromSociety then
+            if GetResourceState("esx_addonaccount") ~= "started" then sendDebugMessage("error", "AddOnAccount not started") return end
+            TriggerEvent('esx_addonaccount:getSharedAccount', "society_"..fromIdentifier, function(account)
+                if account and next(account) then
+                    local money = account.money
+                    if amountToTransfer > money then cb({success = false, errorMsg = "Not enough money"}) return end
+                    local xPlayer = GetPlayerFromIdentifier(toIdentifier)
+
+                    --- Logic to add if you want to update the yPlayer even if not connected
+                    if not xPlayer or not next(xPlayer) then
+                        sendDebugMessage("error", "Player with identifier "..toIdentifier.. "is not connected")
+                        cb({success = false, errorMsg = "Player isn't connected"})
+                        return
+                    end
+                    account.removeMoney(amountToTransfer)
+
+                    xPlayer.addAccountMoney("bank", amountToTransfer, "Transfer from " .. xPlayer.getName())
+
+                    AddToLog(source, fromIdentifier, {
+                        status = Translate("nui_status_transfer"),
+                        date = os.time(),
+                        description = Translate("nui_status_transfer_msg"),
+                        amount = -amountToTransfer,
+                        to = xPlayer.getName()
+                    })
+
+                    AddToLog(nil, toIdentifier, {
+                        status = Translate("nui_status_transfer"),
+                        date = os.time(),
+                        description = Translate("nui_status_transfer_msg"),
+                        amount = amountToTransfer,
+                        from = fromLabel
+                    })
+
+
+                    money = money - amountToTransfer
+                    cb({success = true, money = money})
+                    SendWebhook(webhook.link, string.format("%s (license: %s) - Made a transfer of $%s from %s to %s bank account (%s)", ESX.GetPlayerFromId(source).getName(), ESX.GetPlayerFromId(source).getIdentifier(), fromIdentifier ,amountToTransfer, xPlayer.getName(), toIdentifier))
+                else
+                    sendDebugMessage("error", "No account for identifier " .. fromIdentifier)
+                    cb({success = false, errorMsg = "No account for identifier " .. fromIdentifier})
+                    return
+                end
+            end)
+        else
+            local xPlayer = GetPlayerFromIdentifier(fromIdentifier)
+            if not xPlayer or not next(xPlayer) then cb({success = false, errorMsg = "No player found for source " .. source}) return end
+            local bankAccount <const> = xPlayer.getAccount("bank")
+
+            if amountToTransfer > bankAccount.money then cb({success = false, errorMsg = "Not enough money"}) return end
+
+            local yPlayer = GetPlayerFromIdentifier(toIdentifier)
+
+            --- Logic to add if you want to update the yPlayer even if not connected
+            if not yPlayer or not next(yPlayer) then cb({success = false, errorMsg = "Player isn't connected"}) return end
+
+            xPlayer.removeAccountMoney("bank", amountToTransfer, "Transfer to " .. yPlayer.getName())
+            yPlayer.addAccountMoney("bank", amountToTransfer, "Transfer from " .. xPlayer.getName())
+
+            AddToLog(source, fromIdentifier, {
+                status = Translate("nui_status_transfer"),
+                date = os.time(),
+                description = Translate("nui_status_transfer_msg"),
+                amount = -amountToTransfer,
+                to = toLabel
+            })
+
+            AddToLog(nil, toIdentifier, {
+                status = Translate("nui_status_transfer"),
+                date = os.time(),
+                description = Translate("nui_status_transfer_msg"),
+                amount = amountToTransfer,
+                from = xPlayer.getName()
+            })
+
+            cb({success = true, money = xPlayer.getAccount("bank").money})
+
+            SendWebhook(webhook.link, string.format("%s (license: %s) - Made a transfer of $%s from %s to %s bank account (%s)", ESX.GetPlayerFromId(source).getName(), ESX.GetPlayerFromId(source).getIdentifier(), fromIdentifier ,amountToTransfer, yPlayer.getName(), toIdentifier))
+        end
+    end
+end
+```
+
+### QBCore
+
+```LUA
+--- Transfer Bank money to IBAN
+--- @param source integer # Player source
+--- @param fromIdentifier string # sender - player identifier (citizenid/license) or society name
+--- @param toIdentifier string # receiver - player identifier (citizenid/license) or society name
+--- @param isFromSociety boolean # If sender is "society"
+--- @param isToSociety boolean # If receiver is "society"
+--- @param amountToTransfer integer # Amount of money to transfer
+--- @param ibanToTransferTo string # Receiver IBAN
+--- @param fromLabel string # Sender Label
+--- @param toLabel string # Receiver Label
+--- @param cb function
+function TransferMoney(source, fromIdentifier, toIdentifier, isFromSociety, isToSociety, amountToTransfer, ibanToTransferTo, fromLabel, toLabel, cb)
+    assert(math.type(source) == "integer", "Source must be an integer")
+    assert(type(fromIdentifier) == "string", "from identifier must be a string")
+    assert(type(toIdentifier) == "string", "to identifier must be a string")
+    assert(type(isFromSociety) == "boolean", "isFromSociety must be a boolean")
+    assert(type(isToSociety) == "boolean", "isToSociety must be a boolean")
+    assert(math.type(amountToTransfer) == "integer", "Amount to transfer must be an integer")
+    assert(type(ibanToTransferTo) == "string", "IBAN must be a string")
+    assert(type(fromLabel) == "string", "From Label must be a string")
+    assert(type(toLabel) == "string", "To Label must be a string")
+
+    if isToSociety then
+        if isFromSociety then
+            -- Society to Society
+            if GetResourceState("qb-management") ~= "started" then
+                sendDebugMessage("error", "qb-management not started")
+                cb({success = false, errorMsg = "Management system not available"})
+                return
+            end
+
+            cb({success = false, errorMsg = "Not enough money"})
+        else
+            -- Player to Society
+            if GetResourceState("qb-management") ~= "started" then
+                sendDebugMessage("error", "qb-management not started")
+                cb({success = false, errorMsg = "Management system not available"})
+                return
+            end
+
+            local Player = GetPlayerFromIdentifier(fromIdentifier)
+            if not Player then cb({success = false, errorMsg = "No player found"}) return end
+
+            local bankMoney = Player.PlayerData.money.bank or 0
+            if amountToTransfer > bankMoney then cb({success = false, errorMsg = "Not enough money"}) return end
+
+            Player.Functions.RemoveMoney("bank", amountToTransfer, "Transfer to " .. toLabel)
+
+            cb({success = true, money = Player.PlayerData.money.bank - amountToTransfer})
+            cb({success = false, errorMsg = "Failed to transfer to society"})
+        end
+    else
+        if isFromSociety then
+            -- Society to Player
+            if GetResourceState("qb-management") ~= "started" then
+                sendDebugMessage("error", "qb-management not started")
+                cb({success = false, errorMsg = "Management system not available"})
+                return
+            end
+
+            cb({success = false, errorMsg = "Not enough money"})
+        else
+            -- Player to Player
+            local Player = GetPlayerFromIdentifier(fromIdentifier)
+            if not Player then cb({success = false, errorMsg = "No player found for source " .. source}) return end
+
+            local bankMoney = Player.PlayerData.money.bank or 0
+            if amountToTransfer > bankMoney then cb({success = false, errorMsg = "Not enough money"}) return end
+
+            local TargetPlayer = GetPlayerFromIdentifier(toIdentifier)
+            if not TargetPlayer then cb({success = false, errorMsg = "Player isn't connected"}) return end
+
+            Player.Functions.RemoveMoney("bank", amountToTransfer, "Transfer to " .. TargetPlayer.PlayerData.charinfo.firstname .. " " .. TargetPlayer.PlayerData.charinfo.lastname)
+            TargetPlayer.Functions.AddMoney("bank", amountToTransfer, "Transfer from " .. Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname)
+
+            AddToLog(source, fromIdentifier, {
+                status = Translate("nui_status_transfer"),
+                date = os.time(),
+                description = Translate("nui_status_transfer_msg"),
+                amount = -amountToTransfer,
+                to = toLabel
+            })
+            AddToLog(nil, toIdentifier, {
+                status = Translate("nui_status_transfer"),
+                date = os.time(),
+                description = Translate("nui_status_transfer_msg"),
+                amount = amountToTransfer,
+                from = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
+            })
+
+            cb({success = true, money = Player.PlayerData.money.bank - amountToTransfer})
+            SendWebhook(webhook.link, string.format("%s (CitizenId: %s) - Made a transfer of $%s from %s to %s bank account (%s)", Player.PlayerData.name, Player.PlayerData.citizenid, amountToTransfer, fromIdentifier, TargetPlayer.PlayerData.name or toIdentifier, toIdentifier))
+        end
+    end
+end
+```
+
+## RemoveMoneyFromBankAccount
+
+Removes money from any account for service fees or other operations.
+
+### Custom
+
+```LUA
+--- Remove Money from an account
+--- @param source integer # Player Source
+--- @param accountName string # "bank"
+--- @param amount number # Amount to remove
+--- @param cb function
+function RemoveMoneyFromBankAccount(source, accountName, amount, cb)
+    assert(math.type(source) == "integer", "Source must be an integer")
+    assert(type(accountName) == "string", "Account name must be a string")
+    assert(math.type(amount) == "integer", "Amount must be an integer")
+    assert(type(cb) == "function", "CB must be a function")
+end
+```
+
+### ESX
+
+```LUA
+--- Remove Money from an account
+--- @param source integer # Player Source
+--- @param identifier string # Account Identifier : license or society name
+--- @param accountName string # "bank"
+--- @param amount number # Amount to remove
+--- @param reason string  # Description (e.g. "Order a new card")
+--- @param status string  # (e.g. "Fee", "Withdraw", "Transfer", "Deposit")
+--- @param cb function
+function RemoveMoneyFromBankAccount(source, identifier, accountName, amount, reason, status, cb)
+    assert(math.type(source) == "integer", "Source must be an integer")
+    assert(type(accountName) == "string", "Account name must be a string")
+    assert(math.type(amount) == "integer", "Amount must be an integer")
+    assert(type(cb) == "function", "CB must be a function")
+
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer or not next(xPlayer) then cb(false) return end
+
+    local accountMoney = xPlayer.getAccount(accountName).money
+    if amount > accountMoney then cb(false) return end
+
+    xPlayer.removeAccountMoney(accountName, amount, "")
+
+    AddToLog(source, identifier, {
+        status = status,
+        date = os.time(),
+        description = reason,
+        amount = -amount,
+    })
+
+    cb(true)
+end
+```
+
+### QBCore
+
+```LUA
+--- Remove Money from an account
+--- @param source integer # Player Source
+--- @param identifier string # Account Identifier : citizenid/license or society name
+--- @param accountName string # "bank" or "cash"
+--- @param amount number # Amount to remove
+--- @param reason string  # Description (e.g. "Order a new card")
+--- @param status string  # (e.g. "Fee", "Withdraw", "Transfer", "Deposit")
+--- @param cb function
+function RemoveMoneyFromBankAccount(source, identifier, accountName, amount, reason, status, cb)
+    assert(math.type(source) == "integer", "Source must be an integer")
+    assert(type(accountName) == "string", "Account name must be a string")
+    assert(math.type(amount) == "integer", "Amount must be an integer")
+    assert(type(cb) == "function", "CB must be a function")
+
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then cb(false) return end
+
+    local accountMoney = Player.PlayerData.money[accountName] or 0
+    if amount > accountMoney then cb(false) return end
+
+    Player.Functions.RemoveMoney(accountName, amount)
+
+    AddToLog(source, identifier, {
+        status = status,
+        date = os.time(),
+        description = reason,
+        amount = -amount,
+    })
+
+    cb(true)
+end
+
+
+```

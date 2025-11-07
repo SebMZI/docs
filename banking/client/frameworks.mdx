@@ -1,0 +1,177 @@
+---
+title: "Frameworks"
+description: "How different frameworks integrate with the banking system"
+---
+
+## Overview
+
+This section shows how to connect the **SMZI Banking** resource with your preferred framework. Each function can be implemented differently depending on whether you use **Custom**, **ESX**, or **QBCore**.
+
+---
+
+## ShowNotification
+
+Displays a general notification to the player.
+
+### Custom
+
+```LUA
+function ShowNotification(text)
+end
+```
+
+### ESX
+
+```LUA
+function ShowNotification(text)
+    if not text then return end
+    ESX.ShowNotification(text)
+end
+```
+
+### QBCore
+
+```LUA
+function ShowNotification(text)
+    QBCore.Functions.Notify(text)
+end
+```
+
+## ShowHelpNotification
+
+Displays a help notification at the top-left of the screen.
+
+### Custom
+
+```LUA
+--- Notifiy player in Top Left of the screen
+--- @param text string
+function ShowHelpNotification(text)
+    BeginTextCommandDisplayHelp("STRING")
+    AddTextComponentSubstringPlayerName(text)
+    EndTextCommandDisplayHelp(0, false, true, -1)
+end
+```
+
+### ESX
+
+```LUA
+function ShowHelpNotification(text)
+    if not text then return end
+    ESX.ShowHelpNotification(text)
+end
+```
+
+### QBCore
+
+```LUA
+--- Notifiy player in Top Left of the screen
+--- @param text string
+function ShowHelpNotification(text)
+    BeginTextCommandDisplayHelp("STRING")
+    AddTextComponentSubstringPlayerName(text)
+    EndTextCommandDisplayHelp(0, false, true, -1)
+end
+```
+
+## GetPlayerMoney
+
+Retrieves the player's balance across different account types (bank, cash, etc.).
+
+### Custom
+
+```LUA
+--- Get Account money (Bank and player's)
+--- @return table
+function GetPlayerMoney()
+    local accounts = {
+        bank = 0,
+        money = 0
+    }
+
+    return accounts
+end
+```
+
+### ESX
+
+```LUA
+--- Get Account money (Bank and player's)
+--- @return table
+function GetPlayerMoney()
+    local accounts = {}
+    local playerData <const> = ESX.GetPlayerData()
+    if not playerData or not next(playerData) then return accounts end
+
+    for i = 1, #playerData.accounts do
+        local account = playerData.accounts[i]
+        accounts[account.name] = account.money
+    end
+    return accounts
+end
+```
+
+### QBCore
+
+```LUA
+--- Get Account money (Bank and player's)
+--- @return table
+function GetPlayerMoney()
+    local accounts = {}
+    local PlayerData = QBCore.Functions.GetPlayerData()
+
+    if not PlayerData or not next(PlayerData) then return accounts end
+
+    -- QBCore stocke l'argent dans PlayerData.money
+    -- Structure: { cash = 0, bank = 0, crypto = 0 }
+    if PlayerData.money then
+        for accountType, amount in pairs(PlayerData.money) do
+            if accountType == "cash" then
+                accounts["money"] = amount
+            else
+                accounts[accountType] = amount
+            end
+        end
+    end
+
+    return accounts
+end
+```
+
+## IsPlayerBoss
+
+Returns the society name and label if the player is a boss.
+(Only needed if your resource interacts with society funds.)
+
+### Custom
+
+```LUA
+--- Get the name of the society player is boss in
+--- @return string|nil # society name
+--- @return string|nil # society label
+function IsPlayerBoss()
+    return nil, nil
+end
+```
+
+### ESX
+
+```LUA
+--- Get the name of the society player is boss in
+--- @return string|nil # society name
+--- @return string|nil # society label
+function IsPlayerBoss()
+    return nil, nil
+end
+```
+
+### QBCore
+
+```LUA
+--- Get the name of the society player is boss in
+--- @return string|nil # society name
+--- @return string|nil # society label
+function IsPlayerBoss()
+    return nil, nil
+end
+```

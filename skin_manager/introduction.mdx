@@ -39,11 +39,12 @@ _Note_: Collection Management will be added later
         To make the script work correctly, you need to remove these resources:
         - esx_skin
         - esx_multicharacter
+        - esx_identity
         - skinchanger
         - qb_multicharacter
     </Step>
     <Step title="Modify Core">
-        If using esx as your framework, you will need to change this in `es_extended/client/functions.lua` <br/><br/>
+        If using esx as your framework, you will need to change this in `es_extended/client/functions.lua` or `es_extended/client/main.lua`  <br/><br/>
         Before
         ```LUA
         function ESX.SpawnPlayer(skin, coords, cb)
