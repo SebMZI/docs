@@ -16,7 +16,7 @@ This function adds the card item defined in `config.lua` to the player's invento
 --- @return boolean # Success
 function addCardToInventory(source, metadata)
     assert(math.type(source) == "integer", "Source needs to be an integer")
-    assert(type(metadata) == "table", "Metadta")
+    assert(type(metadata) == "table", "Metadata needs to be a table!")
     local isSuccess = false
 
     local canCarryItem = exports.ox_inventory:CanCarryItem(source, Config.item, 1, metadata)
@@ -48,7 +48,7 @@ end
 --- @return boolean # Success
 function addCardToInventory(source, metadata)
     assert(math.type(source) == "integer", "Source needs to be an integer")
-    assert(type(metadata) == "table", "Metadta")
+    assert(type(metadata) == "table", "Metadata needs to be a table")
     local isSuccess = false
 
     local canCarryItem, reason = exports['qb-inventory']:CanAddItem(source, Config.item, 1)
