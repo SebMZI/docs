@@ -1,0 +1,16 @@
+---
+title: "Exports"
+description: "How the banking system connects to each framework on the server side."
+---
+
+## AddToLog
+
+Add a new log to the bank account
+
+```LUA
+--- @param source integer|nil # Player Source (if you want to send to open nui client)
+--- @param identifier string # Account identifier
+--- @param log table # status (deposit, transfer, withdraw, fee), date (os.time()), description, amount
+--- @return boolean # Success
+exports['smzi_banking']:AddToLog(source, identifier, log)
+```

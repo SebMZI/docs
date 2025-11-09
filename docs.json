@@ -30,7 +30,8 @@
                 "group": "Server",
                 "pages": [
                   "banking/server/frameworks",
-                  "banking/server/inventory"
+                  "banking/server/inventory",
+                  "banking/server/exports"
                 ]
               },
               "banking/configuration/configuration"
