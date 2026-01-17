@@ -18,6 +18,17 @@
         "group": "Scripts",
         "pages": [
           {
+            "group": "Bridge",
+            "icon": "bridge",
+            "pages": [
+              "bridge/installation",
+              {
+                "group": "Configuration",
+                "pages": ["kiosk/configuration_frameworks"]
+              }
+            ]
+          },
+          {
             "group": "Kiosk",
             "icon": "shop",
             "pages": [
