@@ -1,0 +1,55 @@
+---
+title: "Divers"
+description: "Other settings"
+keywords: ["kiosk", "smzi", "bridge", "shop", "settings", "money"]
+---
+
+## Remove item from shop stock
+
+---
+
+Remove or not the items for the shop stock once sold through the kiosk.
+
+```LUA
+Config.removeItemFromSocietyStock = false
+```
+
+## Add money to society
+
+---
+
+Add the money gained from selling items through the kiosk directly into the society account.
+
+```LUA
+Config.isMoneyGoingToSociety = false
+```
+
+## Disable Kiosk
+
+---
+
+Disable the kiosk when an employee is in service in the shop.
+
+```LUA
+Config.disableKioskIfShopOpen = true
+```
+
+## Player money
+
+---
+
+On which account to remove the player money from.
+
+```LUA
+Config.money = "money"  -- "money", "bank"
+```
+
+## Version check
+
+---
+
+Receive a log in the server console to know if the resource is up to data.
+
+```LUA
+Config.versionCheck = true
+```

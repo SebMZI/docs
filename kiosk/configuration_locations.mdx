@@ -1,0 +1,24 @@
+---
+title: "Locations"
+description: "Set the kiosk spawn points"
+keywords: ["kiosk", "smzi", "bridge", "shop", "settings", "locations"]
+---
+
+## Add a spawn location
+
+---
+
+```LUA
+Config.locations = {
+    ["ltdlittleseoul"] = { -- enter the name of the job,it will be also used as "society_"
+        colorSettings = "ltd", -- Choose the color settings, see Configuration -> Colors
+        logo = "./images/ltd_logo.png", -- Logo will be displayed on the main page of the kiosk, add it in web/dist/images
+        coords = { -- Coords where to spawn a kiosk
+            vector4(-708.857117, -917.076904, 19.203613, 180.0),
+            vector4(-707.076904, -917.076904, 19.203613, 180.0),
+        }
+    },
+
+    ...
+}
+```

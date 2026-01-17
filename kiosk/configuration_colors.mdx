@@ -1,0 +1,26 @@
+---
+title: "Colors"
+description: "Create different color settings for different kiosk"
+keywords: ["kiosk", "smzi", "bridge", "shop", "settings", "colors"]
+---
+
+## Add an item
+
+---
+
+```LUA
+Config.colors = {
+  ["ltd"] = { -- Set a name for the color setting, and use it in Config.locations
+    primary = "rgba(59,65,132,0.7)", -- Main color
+    bggradientFrom = "#252954", -- background
+    bggradientTo = "#2A326B", -- background
+    accentRed = "#AA1A1E", -- Button on main page, border
+    neutralLight = "#C6CAD6", -- border color
+    borderDark = "#222958", -- Card border
+    cardHover = "#464C91", -- Background when card is hovered
+    link = "#7CA1FF", -- "Quick Buy button"
+  },
+
+  ...
+}
+```

@@ -1,0 +1,27 @@
+---
+title: "Items"
+description: "Add items to the kiosk and choose where they should display."
+
+keywords: ["kiosk", "smzi", "bridge", "shop", "settings", "items"]
+---
+
+## Add an item
+
+---
+
+```LUA
+Config.items = {
+    {
+        name = "water", -- Use to give the item to the player
+        label = "Water", -- Label displayed in the NUI
+        price = 5, -- Price the player will pay to get the item
+        short_description = "A refreshing bottle of water.", -- It will be showed as preview on the card
+        long_description = "Stay hydrated with this pure and refreshing bottle of water. Perfect for quenching your thirst anytime, anywhere.", -- It will be displayed along with the short description once the item is selected
+        image = "water.png", -- Add image in web/dist/images/items
+        category = "drinks", -- Add a item category
+        showIn = {"ltdlittleseoul", "ltdmirrorpark", "ltddavis", "247chumash"} -- Choose which kiosk will display the item
+    },
+
+    ...
+}
+```
